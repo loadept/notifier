@@ -1,0 +1,41 @@
+name: Deploy to Production Server
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Push Docker Image
+    types:
+      - completed
+
+jobs:
+  deploy-on-server:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_KEY }}
+          script: |
+            cd /srv/ipseek
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+
+  notify:
+    needs: deploy-on-server
+    if: always()
+    uses: loadept/notifier/.github/workflows/notify.yml@main
+    with:
+      status: ${{ needs.deploy-on-server.result }}
+      repo: ${{ github.repository }}
+      branch: ${{ github.ref_name }}
+      commit: ${{ github.sha }}
+      actor: ${{ github.actor }}
+      message: ${{ github.event.head_commit.message }}
+    secrets:
+      NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
+      NOTIFY_WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK }}
