@@ -31,19 +31,22 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Send notification
         env:
           NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
           NOTIFY_WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK }}
         run: |
           TIMESTAMP=$(date +%s)
+          COMMIT_MESSAGE=$(git log -1 --pretty=%s)
           BODY=$(printf '{"source":"github","event":"deploy","status":"%s","meta":{"repo":"%s","commit":"%s","branch":"%s","actor":"%s","message":"%s"}}' \
             "${{ inputs.status }}" \
             "${{ inputs.repo }}" \
             "${{ inputs.commit }}" \
             "${{ inputs.branch }}" \
             "${{ inputs.actor }}" \
-            "${{ inputs.message }}")
+            "$COMMIT_MESSAGE")
           MESSAGE=$(printf 'POST\n/notify\n%s\n%s' "$TIMESTAMP" "$BODY")
           SIGNATURE=$(printf '%s' "$MESSAGE" | openssl dgst -sha256 -hmac "$NOTIFY_SECRET" | cut -d' ' -f2)
           curl -X POST "$NOTIFY_WEBHOOK" \
