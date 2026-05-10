@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	"github.com/loadept/notifier/internal/middleware"
 )
 
 var ErrDiscordNoResponse = errors.New("discord has not responded to the request")
@@ -15,8 +17,11 @@ func NewHandler(httpClient *http.Client, webhookURL string) *WebHook {
 
 func (wh *WebHook) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		le := middleware.LogFromCtx(r.Context())
+
 		var body RequestBody
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			le.Error = err.Error()
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
@@ -29,6 +34,7 @@ func (wh *WebHook) Handler() http.Handler {
 
 		embed, err := builder(body)
 		if err != nil {
+			le.Error = err.Error()
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
@@ -38,6 +44,7 @@ func (wh *WebHook) Handler() http.Handler {
 			// 	http.Error(w, err.Error(), http.StatusInternalServerError)
 			// 	return
 			// }
+			le.Error = err.Error()
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
@@ -51,7 +58,7 @@ func (wh *WebHook) sendToDiscord(embed DiscordEmbed) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", wh.webhookURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(http.MethodPost, wh.webhookURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}

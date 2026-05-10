@@ -20,7 +20,7 @@ func main() {
 	log.SetFlags(0)
 	mux := http.NewServeMux()
 	server := &http.Server{
-		Handler:      mux,
+		Handler:      middleware.Logger(mux),
 		Addr:         env("ADDR"),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,

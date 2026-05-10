@@ -14,7 +14,7 @@ type WebHook struct {
 type RequestBody struct {
 	Source string          `json:"source"`
 	Event  string          `json:"event"`
-	Status string          `json:"status"`
+	Status string          `json:"status,omitempty"`
 	Meta   json.RawMessage `json:"meta,omitempty"`
 }
 

@@ -111,8 +111,14 @@ func buildLoadeptVisit(r RequestBody) (DiscordEmbed, error) {
 		Embeds: []Embed{
 			{
 				Title:       "👤 Nueva visita",
-				Description: fmt.Sprintf("`%s` desde %s (%s, %s)", meta.Path, meta.IP, meta.City, meta.Country),
+				Description: "¡Alguien ha visitado el short url de loadept!",
 				Color:       ColorLoadept,
+				Fields: []EmbedField{
+					{Name: "IP", Value: meta.IP, Inline: true},
+					{Name: "Short URL", Value: meta.Path, Inline: true},
+					{Name: "País", Value: meta.Country, Inline: true},
+					{Name: "Ciudad", Value: meta.City, Inline: true},
+				},
 			},
 		},
 	}, nil
